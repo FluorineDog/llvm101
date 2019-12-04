@@ -133,8 +133,7 @@ main() {
     Constant* Ten = builder.getInt32(10);
     auto local_x = builder.CreateAlloca(Type::getInt32Ty(Context), nullptr, "local_x");
     builder.CreateStore(Ten, local_x);
-    auto x = builder.CreateLoad(local_x);
-     
+    auto x = builder.CreateLoad(local_x, "right_value");
     // Pass Ten to the call to Add1F
     auto final_res = builder.CreateCall(Add1F, x);
     builder.CreateRet(final_res);
