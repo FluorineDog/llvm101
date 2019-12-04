@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+project(main)
+find_package(LLVM)
+set(CMAKE_CXX_STANDARD 17)
+option(LLVM_ENABLE_RTTI ON)
+add_executable(main HowToUseJIT.cpp)
+target_link_libraries(main LLVM)
