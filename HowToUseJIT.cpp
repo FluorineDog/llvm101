@@ -152,7 +152,7 @@ main() {
     std::unique_ptr<ExecutionEngine> EE(EngineBuilder(std::move(Owner)).create());
 
     outs() << "We just constructed this LLVM module:\n\n" << *M;
-    outs() << "\n\nRunning foo: ";
+    outs() << "\n\nRunning foo: \n";
     outs().flush();
     
     // Call the `foo' function with no arguments:
