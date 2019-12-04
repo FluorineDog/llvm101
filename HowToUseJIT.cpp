@@ -57,17 +57,21 @@
 
 using namespace llvm;
 
-int
-main() {
+void init_environment() {
     InitializeNativeTarget();
     LLVMInitializeNativeAsmPrinter();
     LLVMInitializeNativeAsmParser();
+}
 
+int
+main() {
+    init_environment();
     LLVMContext Context;
-
+    IRBuilder<> builder(Context);
     // Create some module to put our function into it.
     std::unique_ptr<Module> Owner = make_unique<Module>("test", Context);
     Module* M = Owner.get();
+
 
     // Create the add1 function entry and insert this entry into module M.  The
     // function will have a return type of "int" and take an argument of "int".
@@ -83,7 +87,7 @@ main() {
 
     // Create a basic block builder with default parameters.  The builder will
     // automatically append instructions to the basic block `BB'.
-    IRBuilder<> builder(BB);
+    builder.SetInsertPoint(BB);
 
     // Get pointers to the constant `1'.
     Value* One = builder.getInt32(1);
