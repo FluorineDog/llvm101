@@ -65,7 +65,7 @@ class LLVM_Environment {
         LLVMInitializeNativeAsmParser();
     }
     ~LLVM_Environment() {
-        // global
+        // free all resources
         llvm_shutdown();
     }
 };
