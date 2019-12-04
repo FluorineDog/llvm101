@@ -57,15 +57,24 @@
 
 using namespace llvm;
 
-void init_environment() {
-    InitializeNativeTarget();
-    LLVMInitializeNativeAsmPrinter();
-    LLVMInitializeNativeAsmParser();
-}
+class LLVM_Environment {
+ public:
+    LLVM_Environment() {
+        InitializeNativeTarget();
+        LLVMInitializeNativeAsmPrinter();
+        LLVMInitializeNativeAsmParser();
+    }
+    ~LLVM_Environment() {
+        // global
+        llvm_shutdown();
+    }
+};
+
 
 int
 main() {
-    init_environment();
+    LLVM_Environment llvm_enviroment;
+
     LLVMContext Context;
     IRBuilder<> builder(Context);
     // Create some module to put our function into it.
@@ -130,7 +139,7 @@ main() {
     builder.CreateRet(Add1CallRes);
 
     // Now we create the JIT.
-    ExecutionEngine* EE = EngineBuilder(std::move(Owner)).create();
+    std::unique_ptr<ExecutionEngine> EE(EngineBuilder(std::move(Owner)).create());
 
     outs() << "We just constructed this LLVM module:\n\n" << *M;
     outs() << "\n\nRunning foo: ";
@@ -142,7 +151,5 @@ main() {
 
     // Import result of execution:
     outs() << "Result: " << gv.IntVal << "\n";
-    delete EE;
-    llvm_shutdown();
     return 0;
 }
