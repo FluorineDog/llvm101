@@ -58,12 +58,13 @@
 using namespace llvm;
 
 using std::vector;
-vector<double> generate_data(int size, double step) {
+vector<double>
+generate_data(int size, double step) {
     vector<double> vec(size);
-    for(int i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         vec[i] = i * step;
     }
-    return vec; 
+    return vec;
 }
 
 class LLVM_Environment {
@@ -87,26 +88,25 @@ main() {
     // Create some module to put our function into it.
     std::unique_ptr<Module> Owner = make_unique<Module>("test", Context);
     Module* M = Owner.get();
-    // Create a basic block builder with default parameters. 
+    // Create a basic block builder with default parameters.
     IRBuilder<> builder(Context);
-    
+
     // Create the add1 function entry and insert this entry into module M.  The
     // function will have a return type of "int" and take an argument of "int".
-    FunctionType* func_type = 
-        FunctionType::get(Type::getInt32Ty(Context), {Type::getInt32Ty(Context)}, false);
-    Function* Add1F = Function::Create(
-        func_type,
-        Function::ExternalLinkage,
-        "add1",
-        M);
-        
+    FunctionType* func_type = FunctionType::get(
+        /*return_type*/ Type::getInt32Ty(Context),
+        /*arg_types*/ {Type::getInt32Ty(Context)},
+        /*is_var_args*/ false);
+    Function* Add1F = Function::Create(func_type, Function::ExternalLinkage, "add1", M);
+
     // Add a basic block to the function. As before, it automatically inserts
     // because of the last argument.
     BasicBlock* BB = BasicBlock::Create(Context, "EntryBlock", Add1F);
     builder.SetInsertPoint(BB);
 
     // Get pointers to the constant `1'.
-    Value* One = builder.getInt32(1);
+    Constant* One = builder.getInt32(1);
+
     // Get pointers to the integer argument of the add1 function...
     assert(Add1F->arg_begin() != Add1F->arg_end());    // Make sure there's an arg
     Argument* ArgX = &*Add1F->arg_begin();             // Get the arg
@@ -151,10 +151,10 @@ main() {
     outs() << "We just constructed this LLVM module:\n\n" << *M;
     outs() << "\n\nRunning foo: \n";
     outs().flush();
-    
+
     // Call the `foo' function with no arguments:
     auto fptr_ = EE->getFunctionAddress("foo");
-    auto fptr = reinterpret_cast<int(*)()>(fptr_);
+    auto fptr = reinterpret_cast<int (*)()>(fptr_);
     // std::vector<GenericValue> noargs();
     // GenericValue gv = EE->runFunction(FooF, noargs);
     auto result = fptr();
