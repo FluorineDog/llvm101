@@ -109,16 +109,15 @@ main() {
 
     // Get pointers to the integer argument of the add1 function...
     auto iter = Add1F->arg_begin();
-    auto ArgX = static_cast<Argument*>(iter);
-    ArgX->setName("input_x");    // Give it a nice symbolic name for fun.
+    Argument* input_x = iter;
+    input_x->setName("input_x");    // Give it a nice symbolic name for fun.
     iter++;
     assert(iter == Add1F->arg_end());
 
     // Create the add instruction, inserting it into the end of BB.
-    Value* Add = builder.CreateAdd(One, ArgX);
-
+    Value* X_plus_1 = builder.CreateAdd(input_x, One);
     // Create the return instruction and add it to the basic block
-    builder.CreateRet(Add);
+    builder.CreateRet(X_plus_1);
 
     // Now, function add1 is ready.
 
