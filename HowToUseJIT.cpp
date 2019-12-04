@@ -128,34 +128,24 @@ main() {
                          Function::ExternalLinkage,
                          "foo",
                          M);
-
-    // Add a basic block to the FooF function.
     BB = BasicBlock::Create(Context, "EntryBlock", FooF);
-
-    // Tell the basic block builder to attach itself to the new basic block
     builder.SetInsertPoint(BB);
-
-    // Get pointer to the constant `10'.
-    Value* Ten = builder.getInt32(10);
-
+    Constant* Ten = builder.getInt32(10);
+    auto local_x = builder.CreateAlloca(Type::getInt32Ty(Context), nullptr, "local_x");
+    builder.CreateStore(Ten, local_x);
+    auto x = builder.CreateLoad(local_x);
+     
     // Pass Ten to the call to Add1F
-    CallInst* Add1CallRes = builder.CreateCall(Add1F, Ten);
-    Add1CallRes->setTailCall(true);
-
-    // Create the return instruction and add it to the basic block.
-    builder.CreateRet(Add1CallRes);
-
+    auto final_res = builder.CreateCall(Add1F, x);
+    builder.CreateRet(final_res);
 
     // Now we create the MCJIT.
     std::unique_ptr<ExecutionEngine> EE(EngineBuilder(std::move(Owner)).create());
-
-    outs() << "We just constructed this LLVM module:\n\n" << *M;
-    outs() << "\n\nRunning foo: \n";
-    outs().flush();
+    outs() << *M;
 
     // Call the `foo' function with no arguments:
-    auto fptr_ = EE->getFunctionAddress("foo");
-    auto fptr = reinterpret_cast<int (*)()>(fptr_);
+    uint64_t fptr_ = EE->getFunctionAddress("foo");
+    int (*fptr)() = reinterpret_cast<int (*)()>(fptr_);
     // std::vector<GenericValue> noargs();
     // GenericValue gv = EE->runFunction(FooF, noargs);
     auto result = fptr();
