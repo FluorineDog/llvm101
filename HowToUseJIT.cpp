@@ -70,6 +70,15 @@ class LLVM_Environment {
     }
 };
 
+using std::vector;
+
+vector<double> generate_data(int size, double step) {
+    vector<double> vec(size);
+    for(int i = 0; i < size; ++i) {
+        vec[i] = i * step;
+    }
+    return vec; 
+}
 
 int
 main() {
@@ -138,18 +147,21 @@ main() {
     // Create the return instruction and add it to the basic block.
     builder.CreateRet(Add1CallRes);
 
-    // Now we create the JIT.
+
+    // Now we create the MCJIT.
     std::unique_ptr<ExecutionEngine> EE(EngineBuilder(std::move(Owner)).create());
 
     outs() << "We just constructed this LLVM module:\n\n" << *M;
     outs() << "\n\nRunning foo: ";
     outs().flush();
-
+    
     // Call the `foo' function with no arguments:
-    std::vector<GenericValue> noargs;
-    GenericValue gv = EE->runFunction(FooF, noargs);
-
+    auto fptr_ = EE->getFunctionAddress("foo");
+    auto fptr = reinterpret_cast<int(*)()>(fptr_);
+    // std::vector<GenericValue> noargs();
+    // GenericValue gv = EE->runFunction(FooF, noargs);
+    auto result = fptr();
     // Import result of execution:
-    outs() << "Result: " << gv.IntVal << "\n";
+    outs() << "Result: " << result << "\n";
     return 0;
 }
