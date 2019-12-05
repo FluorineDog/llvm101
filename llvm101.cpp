@@ -68,13 +68,6 @@ class Engine {
     std::unique_ptr<ExecutionEngine> EE;
 };
 
-llvm::Value*
-bin_op(IRBuilder<>& builder, Op op, llvm::Value* left, llvm::Value* right) {
-    // TODO: helper function
-    // TODO: insert code here
-    return nullptr;
-}
-
 // excise now!
 func_t
 Engine::get_function(Op op1, Op op2) {
