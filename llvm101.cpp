@@ -72,14 +72,14 @@ class Engine {
 func_t
 Engine::get_function(Op op1, Op op2) {
     static int counter = 0;
-    auto name = "func_" + std::to_string(counter++);
+    auto func_name = "func_" + std::to_string(counter++);
 
     // TODO: insert code for funcion here!!
     // TODO: notice that builder, ctx, M is ready at "this" pointer
 
     EE = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(Owner)).create());
     outs() << *mod;
-    auto fptr_ = EE->getFunctionAddress(name);
+    auto fptr_ = EE->getFunctionAddress(func_name);
     return reinterpret_cast<func_t>(fptr_);
 }
 
