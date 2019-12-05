@@ -177,6 +177,6 @@ main() {
             exit(-1);
         }
     }
-    std::cout << "all is ok";
+    std::cout << "all is ok" << std::endl;
     return 0;
 }
