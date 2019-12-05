@@ -43,7 +43,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LLVMctx.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/Support/Casting.h"
@@ -84,24 +84,24 @@ int
 main() {
     LLVM_Environment llvm_enviroment;
 
-    LLVMContext Context;
+    LLVMctx ctx;
     // Create some module to put our function into it.
-    std::unique_ptr<Module> Owner = make_unique<Module>("test", Context);
-    Module* M = Owner.get();
+    std::unique_ptr<Module> module_owner = make_unique<Module>("test", ctx);
+    Module* mod = module_owner.get();
     // Create a basic block builder with default parameters.
-    IRBuilder<> builder(Context);
+    IRBuilder<> builder(ctx);
 
-    // Create the add1 function entry and insert this entry into module M.  The
+    // Create the add1 function entry and insert this entry into module mod.  The
     // function will have a return type of "int" and take an argument of "int".
     FunctionType* func_type = FunctionType::get(
-        /*return_type*/ Type::getInt32Ty(Context),
-        /*arg_types*/ {Type::getInt32Ty(Context)},
+        /*return_type*/ Type::getInt32Ty(ctx),
+        /*arg_types*/ {Type::getInt32Ty(ctx)},
         /*is_var_args*/ false);
-    Function* Add1F = Function::Create(func_type, Function::ExternalLinkage, "add1", M);
+    Function* Add1F = Function::Create(func_type, Function::ExternalLinkage, "add1", mod);
 
     // Add a basic block to the function. As before, it automatically inserts
     // because of the last argument.
-    BasicBlock* BB = BasicBlock::Create(Context, "EntryBlock", Add1F);
+    BasicBlock* BB = BasicBlock::Create(ctx, "EntryBlock", Add1F);
     builder.SetInsertPoint(BB);
 
     // Get pointers to the constant `1'.
@@ -123,15 +123,14 @@ main() {
 
     // Now we're going to create function `foo', which returns an int and takes no
     // arguments.
-    Function* FooF =
-        Function::Create(FunctionType::get(Type::getInt32Ty(Context), {}, false),
-                         Function::ExternalLinkage,
-                         "foo",
-                         M);
-    BB = BasicBlock::Create(Context, "EntryBlock", FooF);
+    Function* FooF = Function::Create(FunctionType::get(Type::getInt32Ty(ctx), {}, false),
+                                      Function::ExternalLinkage,
+                                      "foo",
+                                      mod);
+    BB = BasicBlock::Create(ctx, "EntryBlock", FooF);
     builder.SetInsertPoint(BB);
     Constant* Ten = builder.getInt32(10);
-    auto local_x = builder.CreateAlloca(Type::getInt32Ty(Context), nullptr, "local_x");
+    auto local_x = builder.CreateAlloca(Type::getInt32Ty(ctx), nullptr, "local_x");
     builder.CreateStore(Ten, local_x);
     auto x = builder.CreateLoad(local_x, "right_value");
     // Pass Ten to the call to Add1F
@@ -139,8 +138,8 @@ main() {
     builder.CreateRet(final_res);
 
     // Now we create the MCJIT.
-    std::unique_ptr<ExecutionEngine> EE(EngineBuilder(std::move(Owner)).create());
-    outs() << *M;
+    std::unique_ptr<ExecutionEngine> EE(EngineBuilder(std::move(module_owner)).create());
+    outs() << *mod;
 
     // Call the `foo' function with no arguments:
     uint64_t fptr_ = EE->getFunctionAddress("foo");
