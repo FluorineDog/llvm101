@@ -70,81 +70,17 @@ class Engine {
 
 llvm::Value*
 bin_op(IRBuilder<>& builder, Op op, llvm::Value* left, llvm::Value* right) {
-    switch (op) {
-        case Op::Plus:
-            return builder.CreateAdd(left, right);
-        case Op::Minus:
-            return builder.CreateSub(left, right);
-        case Op::Multiply:
-            return builder.CreateMul(left, right);
-        case Op::Divide:
-            return builder.CreateSDiv(left, right);
-        case Op::Modular:
-            return builder.CreateSRem(left, right);
-        default:
-            return nullptr;
-    }
+    // TODO: helper function
+    // TODO: insert code here
+    return nullptr;
 }
 
 // excise now!
 func_t
 Engine::get_function(Op op1, Op op2) {
-    // insert code here!!
-    auto ft = FunctionType::get(Type::getVoidTy(ctx),
-                                {Type::getInt32Ty(ctx),
-                                 Type::getInt32PtrTy(ctx),
-                                 Type::getInt32PtrTy(ctx),
-                                 Type::getInt32PtrTy(ctx),
-                                 Type::getInt32PtrTy(ctx)},
-                                false);
     static int counter = 0;
     auto name = "func_" + std::to_string(counter++);
-    auto f = Function::Create(ft, Function::ExternalLinkage, name, mod);
-    auto init_bb = BasicBlock::Create(ctx, "init_bb", f);
-    auto cond_bb = BasicBlock::Create(ctx, "cond_bb", f);
-    auto body_bb = BasicBlock::Create(ctx, "body_bb", f);
-    auto exit_bb = BasicBlock::Create(ctx, "exit_bb", f);
-
-    auto arg_iter = f->arg_begin();
-    auto size = arg_iter++;
-    auto vec_a = arg_iter++;
-    auto vec_b = arg_iter++;
-    auto vec_c = arg_iter++;
-    auto vec_d = arg_iter++;
-    assert(arg_iter == f->arg_end());
-
-    builder.SetInsertPoint(init_bb);
-    auto local_index =
-        builder.CreateAlloca(Type::getInt32Ty(ctx), nullptr, "local_index");
-    builder.CreateStore(builder.getInt32(0), local_index);
-    builder.CreateBr(cond_bb);
-
-    builder.SetInsertPoint(cond_bb);
-    auto indexCond = builder.CreateLoad(local_index);
-    auto is_cond = builder.CreateICmpSLE(indexCond, size, "is_cond");
-    builder.CreateCondBr(is_cond, body_bb, exit_bb);
-
-    builder.SetInsertPoint(body_bb);
-    auto index_body = builder.CreateLoad(local_index, "index");
-    auto a = builder.CreateLoad(builder.CreateGEP(vec_a, index_body), "va");
-    auto b = builder.CreateLoad(builder.CreateGEP(vec_b, index_body), "vb");
-    auto c = builder.CreateLoad(builder.CreateGEP(vec_c, index_body), "vc");
-    auto a_op_b = bin_op(builder, op1, a, b);
-    a_op_b->setName("a_op_b");
-    auto a_op_b_op_c = bin_op(builder, op2, a_op_b, c);
-    a_op_b_op_c->setName("a_op_b_op_c");
-
-    auto addr_d = builder.CreateGEP(vec_d, index_body);
-    builder.CreateStore(a_op_b_op_c, addr_d);
-
-    // increment bb, inside body_bb, no set insert point
-    auto index_body_plus_1 =
-        builder.CreateAdd(index_body, builder.getInt32(1), "index_plus_1");
-    builder.CreateStore(index_body_plus_1, local_index);
-    builder.CreateBr(cond_bb);
-
-    builder.SetInsertPoint(exit_bb);
-    builder.CreateRetVoid();
+    // TODO: insert code here!!
 
     EE = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(Owner)).create());
     outs() << *mod;
