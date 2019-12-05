@@ -80,7 +80,8 @@ func_t
 Engine::get_function(Op op1, Op op2) {
     static int counter = 0;
     auto name = "func_" + std::to_string(counter++);
-    // TODO: insert code for funcion herer!!
+
+    // TODO: insert code for funcion here!!
 
     EE = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(Owner)).create());
     outs() << *mod;
