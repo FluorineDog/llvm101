@@ -127,14 +127,26 @@ main() {
                                       Function::ExternalLinkage,
                                       "foo",
                                       mod);
-    BB = BasicBlock::Create(ctx, "EntryBlock", FooF);
-    builder.SetInsertPoint(BB);
-    Constant* Ten = builder.getInt32(10);
+    auto start_bb = BasicBlock::Create(ctx, "start_bb", FooF);
+    auto then_bb = BasicBlock::Create(ctx, "then_bb", FooF);
+    auto last_bb = BasicBlock::Create(ctx, "last_bb", FooF);
+
+    builder.SetInsertPoint(start_bb);
     auto local_x = builder.CreateAlloca(Type::getInt32Ty(ctx), nullptr, "local_x");
+    builder.CreateStore(builder.getInt32(0), local_x);
+    auto x_start = builder.CreateLoad(local_x);
+    Value* Three = builder.getInt32(3);
+    auto if_cond = builder.CreateICmpNE(x_start, Three, "ne_x_3");
+    builder.CreateCondBr(if_cond, then_bb, last_bb);
+
+    builder.SetInsertPoint(then_bb);
+    Constant* Ten = builder.getInt32(10);
     builder.CreateStore(Ten, local_x);
-    auto x = builder.CreateLoad(local_x, "right_value");
-    // Pass Ten to the call to Add1F
-    auto final_res = builder.CreateCall(Add1F, x);
+    builder.CreateBr(last_bb);
+
+    builder.SetInsertPoint(last_bb);
+    auto x_last = builder.CreateLoad(local_x, "x_last");
+    auto final_res = builder.CreateCall(Add1F, x_last, "final_result");
     builder.CreateRet(final_res);
 
     // Now we create the MCJIT.
