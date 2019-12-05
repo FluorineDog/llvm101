@@ -5,3 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 option(LLVM_ENABLE_RTTI ON)
 add_executable(main HowToUseJIT.cpp)
 target_link_libraries(main LLVM)
+
+add_executable(llvm101 llvm101.cpp)
+target_link_libraries(llvm101 LLVM)

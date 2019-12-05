@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include <random>
+#include <iostream>
 
 using namespace llvm;
 
@@ -55,20 +56,67 @@ using func_t = void (*)(int size, const int* va, const int* vb, const int* vc, i
 
 class Engine {
  public:
-    Engine(): Owner(make_unique<Module>("llvm101", ctx)), mod(Owner.get()), builder(ctx){
-        
-    }
+    Engine()
+        : Owner(make_unique<Module>("llvm101", ctx)), mod(Owner.get()), builder(ctx) {}
     func_t get_function(Op op1, Op op2);
+
  private:
-   LLVMContext ctx; 
-   std::unique_ptr<Module> Owner;
-   Module *mod;
-   IRBuilder<> builder;
+    LLVMContext ctx;
+    std::unique_ptr<Module> Owner;
+    Module* mod;
+    IRBuilder<> builder;
 };
 
+
 // excise now!
-func_t Engine::get_function(Op op1, Op op2){
+func_t
+Engine::get_function(Op op1, Op op2) {
     // insert code here!!
+    auto ft = FunctionType::get(Type::getVoidTy(ctx),
+                                {Type::getInt32Ty(ctx),
+                                 Type::getInt32PtrTy(ctx),
+                                 Type::getInt32PtrTy(ctx),
+                                 Type::getInt32PtrTy(ctx),
+                                 Type::getInt32PtrTy(ctx)},
+                                false);
+    static int counter = 0;
+    auto name = "func_" + std::to_string(counter++);
+    auto f = Function::Create(ft, Function::ExternalLinkage, name, mod);
+    auto init_bb = BasicBlock::Create(ctx, "init_bb", f);
+    auto cond_bb = BasicBlock::Create(ctx, "cond_bb");
+    auto body_bb = BasicBlock::Create(ctx, "body_bb");
+    auto exit_bb = BasicBlock::Create(ctx, "body_bb");
+
+    auto arg_iter = f->arg_begin();
+    auto size = arg_iter++;
+    auto vec_a = arg_iter++;
+    auto vec_b = arg_iter++;
+    auto vec_c = arg_iter++;
+    auto vec_d = arg_iter++;
+    assert(arg_iter == f->arg_end());
+
+    builder.SetInsertPoint(init_bb);
+    auto local_index = builder.CreateAlloca(Type::getInt32PtrTy(ctx));
+    builder.CreateStore(local_index, builder.getInt32(0));
+    builder.CreateBr(cond_bb);
+
+    builder.SetInsertPoint(cond_bb);
+    auto indexCond = builder.CreateLoad(local_index);
+    auto is_cond = builder.CreateICmpSLE(indexCond, size, "is_cond");
+    builder.CreateCondBr(is_cond, body_bb, exit_bb);
+
+    builder.SetInsertPoint(body_bb);
+    auto index_body = builder.CreateLoad(local_index, "index");
+    auto a = builder.CreateLoad(builder.CreateGEP(vec_a, index_body), "va");
+    auto addr_d = builder.CreateGEP(vec_d, index_body);
+    builder.CreateStore(a, addr_d);
+    auto index_body_plus_1 =
+        builder.CreateAdd(index_body, builder.getInt32(1), "index_plus_1");
+    builder.CreateStore(local_index, index_body_plus_1);
+    builder.CreateBr(cond_bb);
+
+    builder.SetInsertPoint(exit_bb);
+    builder.CreateRetVoid();
 
     return nullptr;
 }
@@ -81,6 +129,20 @@ main() {
     vector<int> vec_b = generate_vec(size);
     vector<int> vec_c = generate_vec(size);
     Engine eng;
-    func_t ();
-    
+    func_t func_multiply_plus = eng.get_function(Op::Multiply, Op::Plus);
+
+    vector<int> vec_d(size);
+    func_multiply_plus(size, vec_a.data(), vec_b.data(), vec_c.data(), vec_d.data());
+    //
+    for (int i = 0; i < size; ++i) {
+        auto ans = vec_d[i];
+        // auto ref = vec_a[i] * vec_b[i] + vec_c[i];
+        auto ref = vec_a[i];
+        if (ref != ans) {
+            std::cout << "error at i=" << i << " ans=" << ans << " ref=" << ref;
+            exit(-1);
+        }
+    }
+    std::cout << "all is ok";
+    return 0;
 }

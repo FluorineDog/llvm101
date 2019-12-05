@@ -43,7 +43,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
-#include "llvm/IR/LLVMctx.h"
+#include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/Support/Casting.h"
@@ -84,7 +84,7 @@ int
 main() {
     LLVM_Environment llvm_enviroment;
 
-    LLVMctx ctx;
+    LLVMContext ctx;
     // Create some module to put our function into it.
     std::unique_ptr<Module> module_owner = make_unique<Module>("test", ctx);
     Module* mod = module_owner.get();
