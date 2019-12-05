@@ -68,6 +68,23 @@ class Engine {
     std::unique_ptr<ExecutionEngine> EE;
 };
 
+llvm::Value*
+bin_op(IRBuilder<>& builder, Op op, llvm::Value* left, llvm::Value* right) {
+    switch (op) {
+        case Op::Plus:
+            return builder.CreateAdd(left, right);
+        case Op::Minus:
+            return builder.CreateSub(left, right);
+        case Op::Multiply:
+            return builder.CreateMul(left, right);
+        case Op::Divide:
+            return builder.CreateSDiv(left, right);
+        case Op::Modular:
+            return builder.CreateSRem(left, right);
+        default:
+            return nullptr;
+    }
+}
 
 // excise now!
 func_t
@@ -97,7 +114,8 @@ Engine::get_function(Op op1, Op op2) {
     assert(arg_iter == f->arg_end());
 
     builder.SetInsertPoint(init_bb);
-    auto local_index = builder.CreateAlloca(Type::getInt32Ty(ctx), nullptr, "local_index");
+    auto local_index =
+        builder.CreateAlloca(Type::getInt32Ty(ctx), nullptr, "local_index");
     builder.CreateStore(builder.getInt32(0), local_index);
     builder.CreateBr(cond_bb);
 
@@ -109,8 +127,17 @@ Engine::get_function(Op op1, Op op2) {
     builder.SetInsertPoint(body_bb);
     auto index_body = builder.CreateLoad(local_index, "index");
     auto a = builder.CreateLoad(builder.CreateGEP(vec_a, index_body), "va");
+    auto b = builder.CreateLoad(builder.CreateGEP(vec_b, index_body), "vb");
+    auto c = builder.CreateLoad(builder.CreateGEP(vec_c, index_body), "vc");
+    auto a_op_b = bin_op(builder, op1, a, b);
+    a_op_b->setName("a_op_b");
+    auto a_op_b_op_c = bin_op(builder, op2, a_op_b, c);
+    a_op_b_op_c->setName("a_op_b_op_c");
+
     auto addr_d = builder.CreateGEP(vec_d, index_body);
-    builder.CreateStore(a, addr_d);
+    builder.CreateStore(a_op_b_op_c, addr_d);
+
+    // increment bb, inside body_bb, no set insert point
     auto index_body_plus_1 =
         builder.CreateAdd(index_body, builder.getInt32(1), "index_plus_1");
     builder.CreateStore(index_body_plus_1, local_index);
@@ -121,7 +148,7 @@ Engine::get_function(Op op1, Op op2) {
 
     EE = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(Owner)).create());
     outs() << *mod;
-    auto fptr_ =  EE->getFunctionAddress(name);
+    auto fptr_ = EE->getFunctionAddress(name);
     return reinterpret_cast<func_t>(fptr_);
 }
 
@@ -140,10 +167,13 @@ main() {
     //
     for (int i = 0; i < size; ++i) {
         auto ans = vec_d[i];
-        // auto ref = vec_a[i] * vec_b[i] + vec_c[i];
-        auto ref = vec_a[i];
+        auto ref = vec_a[i] * vec_b[i] + vec_c[i];
         if (ref != ans) {
-            std::cout << "error at i=" << i << " ans=" << ans << " ref=" << ref;
+            std::cout << "error at i=" << i << " ans=" << ans << " ref=" << ref 
+             << " a=" << vec_a[i]
+             << " b=" << vec_b[i]
+             << " c=" << vec_c[i]
+             << std::endl;
             exit(-1);
         }
     }
