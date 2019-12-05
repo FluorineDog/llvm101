@@ -65,6 +65,7 @@ class Engine {
     std::unique_ptr<Module> Owner;
     Module* mod;
     IRBuilder<> builder;
+    std::unique_ptr<ExecutionEngine> EE;
 };
 
 
@@ -83,9 +84,9 @@ Engine::get_function(Op op1, Op op2) {
     auto name = "func_" + std::to_string(counter++);
     auto f = Function::Create(ft, Function::ExternalLinkage, name, mod);
     auto init_bb = BasicBlock::Create(ctx, "init_bb", f);
-    auto cond_bb = BasicBlock::Create(ctx, "cond_bb");
-    auto body_bb = BasicBlock::Create(ctx, "body_bb");
-    auto exit_bb = BasicBlock::Create(ctx, "body_bb");
+    auto cond_bb = BasicBlock::Create(ctx, "cond_bb", f);
+    auto body_bb = BasicBlock::Create(ctx, "body_bb", f);
+    auto exit_bb = BasicBlock::Create(ctx, "exit_bb", f);
 
     auto arg_iter = f->arg_begin();
     auto size = arg_iter++;
@@ -96,8 +97,8 @@ Engine::get_function(Op op1, Op op2) {
     assert(arg_iter == f->arg_end());
 
     builder.SetInsertPoint(init_bb);
-    auto local_index = builder.CreateAlloca(Type::getInt32PtrTy(ctx));
-    builder.CreateStore(local_index, builder.getInt32(0));
+    auto local_index = builder.CreateAlloca(Type::getInt32Ty(ctx), nullptr, "local_index");
+    builder.CreateStore(builder.getInt32(0), local_index);
     builder.CreateBr(cond_bb);
 
     builder.SetInsertPoint(cond_bb);
@@ -112,13 +113,16 @@ Engine::get_function(Op op1, Op op2) {
     builder.CreateStore(a, addr_d);
     auto index_body_plus_1 =
         builder.CreateAdd(index_body, builder.getInt32(1), "index_plus_1");
-    builder.CreateStore(local_index, index_body_plus_1);
+    builder.CreateStore(index_body_plus_1, local_index);
     builder.CreateBr(cond_bb);
 
     builder.SetInsertPoint(exit_bb);
     builder.CreateRetVoid();
 
-    return nullptr;
+    EE = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(Owner)).create());
+    outs() << *mod;
+    auto fptr_ =  EE->getFunctionAddress(name);
+    return reinterpret_cast<func_t>(fptr_);
 }
 
 int
